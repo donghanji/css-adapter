@@ -34,14 +34,18 @@ var M_WIDTH={
 ,M_REG={
 	COMMENT:/\/\*[\S\s]*?\*\//g,
     KEYFRAMES:/@keyframes\s+(\w+)\s*(\{[^@]*\}\s*\})/gim,
-	MEDIA:/@media\s+\(\s*(?:landscape|portrait)?\s*(?:broad|narrow)\s*\:\s*(?:\d+)px\)\s*(?:and\s+\(\s*(?:landscape|portrait)?\s*(?:broad|narrow)\s*\:\s*(?:\d+)px\)\s*){0,}\{([^@\(\)]*)\}\s*\}/gim,
-	NORMALMEDIA:/@media\s+(?:\(normal(?:Max|Min|PX)?Width\s*\:\s*\d+px\)(?:\s+and\s+)?){0,}\s*\{[^@\(\)]*\}/igm,
+	//MEDIA:/@media\s+\(\s*(?:landscape|portrait)?\s*(?:broad|narrow)\s*\:\s*(?:\d+)px\)\s*(?:and\s+\(\s*(?:landscape|portrait)?\s*(?:broad|narrow)\s*\:\s*(?:\d+)px\)\s*){0,}\{([^@\(\)]*)\}\s*\}/gim,
+	MEDIA:/@media\s+\(\s*(?:landscape|portrait)?\s*(?:broad|narrow)\s*\:\s*(?:\d+)px\)\s*(?:and\s+\(\s*(?:landscape|portrait)?\s*(?:broad|narrow)\s*\:\s*(?:\d+)px\)\s*){0,}\{([^@]*)\}\s*\}/gim,
+	NORMALMEDIA:/@media\s+(?:\(normal(?:Max|Min|PX)?Width\s*\:\s*\d+px\)(?:\s+and\s+)?){0,}\s*\{[^@\(\)\{\}]*\}/igm,
 	NORMAL:/((normal(?:Max|Min|PX)?Width)\s*\:\s*(\d+)px)/igm,
 	RATIO:/\s*\(\s*(landscape|portrait)?\s*(broad|narrow)\s*\:\s*(\d+)px\s*\)\s*/gim,
 	STYLESHEET:/\s*([^\{\}]*)\s*\{\s*([^\}]*)\s*\}/gim,
-	CSS:/\s*(\w+-?\w*)\s*:((?:\s*(?:-?\d+(?:\.\d+)?)(?:px|%|em|rem)?\s*){1,4})/gim,
+	//CSS:/\s*(\w+-?\w*)\s*:((?:\s*(?:-?\d+(?:\.\d+)?)(?:px|%|em|rem)?\s*){1,4})/gim,
+	//CSS:/\s*(\w+-?\w*)\s*:((?:\s*(?:(?:-?\d+)?(?:\.\d+)?)(?:px|%|em|rem)?\s*){1,4})/gim,
+	CSS:/\s*(\w+(?:-?\w)*)\s*:([^;\}]*(?:px|%|em|rem)\s*[^;\}]*)/gim,
 	CSS2:/\s*(\w+-?\w*)\s*:((?:\s*(?:-?\d+(?:\.\d+)?)(?:px|%|em|rem)?\s*){1,4};?)/gim,
-	VALUE:/(-?\d+(?:\.\d+)?)(px|%|em|rem)?/gim
+	//VALUE:/(-?\d+(?:\.\d+)?)(px|%|em|rem)?/gim
+	VALUE:/((?:-?\d+)?(?:\.?\d+))(px|%|em|rem)?/gim
 };
 
 M_MINS_ATTR.forEach(function(k,i){
@@ -59,6 +63,7 @@ function adapter(grunt,files,configs){
 		,mins=E({},M_MINS,configs.mins)
 		,maxs=E({},M_MAXS,configs.maxs)
 		,regions=configs.regions
+		,ratios=configs.ratios
         ,prefixs=configs.prefixs||[]
         ,adapters=configs.adapters||{}
         ,attrs=adapters.attrs
@@ -75,8 +80,8 @@ function adapter(grunt,files,configs){
     M_K_PREFIX.push('');//prefixs for keyframe,like @-webkit-
     
     //
-    M_ADAPTER_ATTR=attrs === undefined ? [] : M_ADAPTER_ATTR;
-    M_ADAPTER_ATTR_VALUE=vals === undefined ? [] : M_ADAPTER_ATTR_VALUE;
+    M_ADAPTER_ATTR=(attrs !== undefined && attrs.length) ? attrs : M_ADAPTER_ATTR;
+    M_ADAPTER_ATTR_VALUE=(vals !== undefined && vals.length) ? vals : M_ADAPTER_ATTR_VALUE;
     
     //
     M_REG.ADAPTER=new RegExp('('+M_ADAPTER_ATTR.join('|')+')\s*\:\s*([^;\}]*)\s*(?:;|\})','gim');
@@ -193,15 +198,15 @@ function adapter(grunt,files,configs){
 		});
 	};
 	//
-	function to_styles(style,r2,r3,scale,tm,rm,px){
+	function to_styles(style,r2,r3,scale,tm,rm,px,callback){
 		var s=null;
 		var css=[];
-		scale=scale||1;
+		scale=scale||0;
 		tm=tm||[];
 		rm=rm||[];
 		r2=r2||'broad';
+		//
 		while(s=M_REG.STYLESHEET.exec(style)){
-					
 			var c1=s[1]//css selector
 				,c2=s[2]//rule
 				;
@@ -229,21 +234,28 @@ function adapter(grunt,files,configs){
 				}
 			}
 			
-			var a=null,
-				b=null;
+			var a=null;
+			var no_empty=null;
 			while(a=M_REG.CSS.exec(c2)){
-				b=true;
+				
 				var a1=a[1]//key
 					,a2=a[2]//value
 					;
+				if(callback && callback(a1)){
+
+					continue;
+				}
+
 	            css.push(a1);
 				css.push(':');
 				a2=a2.trim();
-				var v=null;
-				while(v=M_REG.VALUE.exec(a2)){
-					var v1=v[1]//value,digit
-						,v2=v[2]//unit
-						;
+				var v=a2.replace(M_REG.VALUE,function(){
+					var arg=arguments;
+					var v1=arg[1];
+					var v2=arg[2];
+
+					no_empty=true;
+
 					if(px && v2 === 'rem'){
 						
 						scale=scale*px;
@@ -259,25 +271,25 @@ function adapter(grunt,files,configs){
 					_others=EO(_others) ? others : _others;
 					
 					var value=parseFloat((_others[a1]||_units[v2]),10);
-					var unit=px && v2 === 'rem' ? 'px' : v2;
+					var unit=px && v2 === 'rem' ? px : v2;
 					value=value ? value : v1;
 					value=H(value,scale,a1,v2);
 					if(!(px && v2 === 'rem')){
+
 						value=parseFloat(v1,10)+value;
 					}
 					
 					value=R(a1,value,v2);
-	                
-					css.push(value);
-					css.push(unit||'');
-					css.push(' ');
-				}
-				
-				css.pop();//pop ' '
+
+					return value+(unit||'');
+				});
+				css.push(v);
 				css.push(';');
 			}
+
 			css.push('}');
-			if(!b){//now digit value
+			
+			if(!no_empty){//now digit value
 				css.splice(css.length-3,3);//remove like .class{}
 			}
 		}
@@ -285,7 +297,7 @@ function adapter(grunt,files,configs){
 		return css;
 	};
 	//
-	function px2rem(str){
+	function px2rem(str,ratios){
 		var sp=str.split(M_REG.NORMALMEDIA);
         
         //
@@ -319,16 +331,15 @@ function adapter(grunt,files,configs){
         			css.push(normalMinWidth);
         			css.push('px)');
         			css.push('{');
+        			//
         			while(s=M_REG.STYLESHEET.exec(str_1)){
-					
 						var c1=s[1]//css selector
 							,c2=s[2]//rule
 							;
 						css.push(c1);
 						css.push('{');
 						var a=null;
-						var b=null;
-
+						var no_empty=null;
 						while(a=M_REG.CSS.exec(c2)){
 							var a1=a[1]//key
 							,a2=a[2]//value
@@ -343,47 +354,33 @@ function adapter(grunt,files,configs){
 	                        css.push(a1);
 							css.push(':');
 							a2=a2.trim();
-							var v=null;
-							var no_empty=false;
-							while(v=M_REG.VALUE.exec(a2)){
-								var v1=v[1]//value,digit
-									,v2=v[2]//unit
-									;
-								var value=value ? value : v1;
+							
+							var v=a2.replace(M_REG.VALUE,function(){
+								var arg=arguments;
+								var v1=arg[1];
+								var v2=arg[2];
+
+								no_empty=true;
+
 								var scale=v2 === 'rem' ? 1 :normal_scale;
-								value=H(v1,scale,a1,v2);
+								var value=H(v1,scale,a1,v2);
 								if(v2 === '%'){
 
-									continue;
+									return arg[0];
 								}
-								if(value){
-									css.push(value);
-									//
-									if(v2){
-										css.push('rem');
-									}
-								}else{
-									css.push(value);
+								if(v2 && value){
+
+									return value+'rem';
 								}
-								
-								b=true;
-	                            no_empty=true;
-								css.push(' ');
-							}
-							//
-							if(no_empty){
-								css.pop();//pop ' '
-								css.push(';');
-							}else{
-								css.pop();
-								css.pop();
-								css.pop();
-								css.pop();
-							}
+
+								return value;
+							});
+							css.push(v);
+							css.push(';');
 						};
 
 						css.push('}');
-						if(!b){//now digit value
+						if(!no_empty){//now digit value
 							css.splice(css.length-3,3);//remove like .class{}
 						}
 					}
@@ -400,13 +397,17 @@ function adapter(grunt,files,configs){
 		        			region_str.push(r3);
 		        			region_str.push('px){');
 
-		        			var styles=to_styles(str_1,'broad',r3,scale,'','',normalPXWidth);
+		        			var styles=to_styles(str_1,'broad',r3,scale,'','','px');
 		        			region_str.push(styles.join(''));
-		        			region_str.push('}');
+		        			region_str.push('}\n');
 		        		}
 		        	}
 
-		        	css=[region_str.join(''),css.join('')];
+		        	var res=css.join('');
+		        	//
+		        	//res=device_pixel_ratio(res,ratios);
+		        	//
+		        	css=[region_str.join(''),res];
 
 					return str.replace(M_REG.NORMALMEDIA,function(){
 
@@ -418,6 +419,38 @@ function adapter(grunt,files,configs){
 
         return str;
 	};
+
+	//
+	function device_pixel_ratio(str,ratios){
+		ratios=ratios||[];
+		var len=ratios.length;
+		if(!len){
+
+			return str;
+		}
+		var i=0;
+		var ration_str=[];
+		for(;i<ratios.length;i++){
+			var r=parseFloat(ratios[i],10);
+			ration_str.push('@media only screen and (-Webkit-min-device-pixel-ratio:');
+			ration_str.push(r);
+			ration_str.push('){');
+
+			var styles=to_styles(str,'broad',r,r,'','','',function(rule){
+				if(rule !== 'font-size'){
+
+					return true;
+				}
+
+				return false;
+			});
+
+			ration_str.push(styles.join(''));
+			ration_str.push('}\n');
+		}
+
+		return [str,ration_str.join('')].join('');
+	}
 
 	return files.forEach(function(f){
 		
@@ -448,9 +481,12 @@ function adapter(grunt,files,configs){
 		}
         
         //px to rem change
-        var str=px2rem(str);
+        var str=px2rem(str,ratios);
         //return console.log(str);
 
+        //
+		//str=device_pixel_ratio(str,ratios);
+		//return console.log(str);
 		//browser adapter
 		str=V(str);
 		
@@ -572,9 +608,10 @@ function adapter(grunt,files,configs){
             
 			return res.join('');
 		});
+
 		//keyframes adapter
 		str=K(str);
-        
+
 		return grunt.file.write(f.dest,str);
 	});
 };

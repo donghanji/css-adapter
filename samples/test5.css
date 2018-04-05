@@ -1,0 +1,16 @@
+
+
+@media (narrow:480px) and (narrow:320px){
+	.page-case-all{
+		font-size:12px;
+	}
+}
+
+@media (narrow:480px) and (narrow:320px){
+	.page-case-all .list-item:nth-child(2n+1){
+	    padding-right:16px;
+	}
+	.page-case-all .list-item:nth-child(2n){
+	    padding-left:16px;
+	}
+}
