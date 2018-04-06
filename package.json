@@ -1,12 +1,9 @@
 {
   "name": "css-adapter",
   "description": "css adapter, to handle different adaptation of the equipment.",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "homepage": "https://github.com/donghanji/css-adapter",
-  "author": {
-    "name": "donghanji",
-    "url": "https://donghanji.github.com"
-  },
+  "author": "donghanji (https://donghanji.github.com)",
   "main": "gruntfile.js",
   "engines": {
     "node": ">= 0.8.0"
@@ -18,7 +15,7 @@
     "grunt-lib-contrib": "~0.6.1"
   },
   "devDependencies": {
-    "grunt":"~0.4.1"
+    "grunt": "~0.4.1"
   },
   "peerDependencies": {
     "grunt": "~0.4.0"
@@ -27,14 +24,14 @@
     "gruntplugin"
   ],
   "contributors": [
-    {
-      "name": "donghanji",
-      "url": "https://donghanji.github.com"
-    }
+    "donghanji (https://donghanji.github.com)"
   ],
-  "repository":{
-	"type":"git",
-	"url":"git://github.com/donghanji/css-adapter.git"
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/donghanji/css-adapter.git"
   },
-  "readmeFilename": "README.md"
+  "bugs": {
+    "url": "https://github.com/donghanji/css-adapter/issues"
+  },
+  "license": "MIT"
 }

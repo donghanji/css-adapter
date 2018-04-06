@@ -527,7 +527,7 @@ function adapter(grunt,files,configs){
 						continue;
 					}*/
 				}
-				
+				console.log('media r:',r);
 				var css=[];
 				css.push('\n\n@media ');
 				if(r1){
@@ -594,9 +594,11 @@ function adapter(grunt,files,configs){
 				css=css.concat(s);
 				css.push('}');
 				res.push(css.join(''));
+
+				console.log('media res 1:',res);
 			}
             
-			if(rm.length){
+			/*if(rm.length){
 				rm.push('}');
 			}
 			if(tm.length){
@@ -604,7 +606,9 @@ function adapter(grunt,files,configs){
 				tm.push('}');
 			}
 			rm=rm.concat(tm);
-			res.push(rm.join(''));
+			res.push(rm.join(''));*/
+
+			console.log('media res 2:',res);
             
 			return res.join('');
 		});
