@@ -40,6 +40,7 @@ var M_WIDTH={
 	NORMAL:/((normal(?:Max|Min|PX)?Width)\s*\:\s*(\d+)px)/igm,
 	RATIO:/\s*\(\s*(landscape|portrait)?\s*(broad|narrow)\s*\:\s*(\d+)px\s*\)\s*/gim,
 	STYLESHEET:/\s*([^\{\}]*)\s*\{\s*([^\}]*)\s*\}/gim,
+	IMAGEREPLACE:/url\s*?\((["']?)([^\s]*)\1\)\s*?/gim,
 	//CSS:/\s*(\w+-?\w*)\s*:((?:\s*(?:-?\d+(?:\.\d+)?)(?:px|%|em|rem)?\s*){1,4})/gim,
 	//CSS:/\s*(\w+-?\w*)\s*:((?:\s*(?:(?:-?\d+)?(?:\.\d+)?)(?:px|%|em|rem)?\s*){1,4})/gim,
 	CSS:/\s*(\w+(?:-?\w)*)\s*:([^;\}]*(?:px|%|em|rem)\s*[^;\}]*)/gim,
@@ -60,6 +61,7 @@ function adapter(grunt,files,configs){
         ,maxdpi=dpi['max-width']
 		,standard=parseInt((dpi.standard||1024),10)
 		,mode=configs.compile||''
+		,replaceurl=configs.replaceurl||''
 		,mins=E({},M_MINS,configs.mins)
 		,maxs=E({},M_MAXS,configs.maxs)
 		,regions=configs.regions
@@ -147,7 +149,9 @@ function adapter(grunt,files,configs){
 		
 		return true;
 	};
+	//
     function K(value){
+    	//
         return value.replace(M_REG.KEYFRAMES,function(){
             var args=arguments;
             var a0=args[0];
@@ -159,6 +163,27 @@ function adapter(grunt,files,configs){
             return M_K_PREFIX.join(kc)+a0;
         });
     };
+    //
+    function U(value){
+    	//
+    	if(!replaceurl){
+
+    		return value;
+    	}
+    	//
+    	return value.replace(M_REG.IMAGEREPLACE,function(){
+			var args=arguments;
+            var a2=args[2];
+            //
+            if(/^http(?:s)?:\/\//.test(a2)){
+
+            	return args[0];
+            }
+            //
+            return 'url('+replaceurl+a2+')'
+    	});
+    }
+    //
 	function V(value){
 		
 		return value.replace(M_REG.ADAPTER,function(){
@@ -205,6 +230,7 @@ function adapter(grunt,files,configs){
 		tm=tm||[];
 		rm=rm||[];
 		r2=r2||'broad';
+
 		//
 		while(s=M_REG.STYLESHEET.exec(style)){
 			var c1=s[1]//css selector
@@ -613,6 +639,9 @@ function adapter(grunt,files,configs){
 
 		//keyframes adapter
 		str=K(str);
+
+		//image url replace
+		str=U(str);
 
 		return grunt.file.write(f.dest,str);
 	});

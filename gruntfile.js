@@ -13,6 +13,7 @@ module.exports = function(grunt) {
     grunt.initConfig({
         adapter:{
             options:{
+            	"replaceurl":"",
                 "compile":"",
 				"dpi":{
 					"standard":1024,
@@ -32,7 +33,8 @@ module.exports = function(grunt) {
 				"maxs":{
 					
 				},
-				"regions":[640,320],
+				//"regions":[640,320],
+				//"ratios":[1.5,2,3],
                 "prefixs":['-webkit-','-moz-','-ms-','-o-'],
                 'adapters':{
                     'attrs':['border-image','border-radius','box-shadow','background-origin','background-clip','background-size','display','box-sizing','box-pack','box-flex','transform','transform-origin','animation','transition'],
@@ -42,22 +44,22 @@ module.exports = function(grunt) {
                 }
             },
 			/*dist:{
-				src:["samples/test4.css"],
-				dest:"samples/test4.adapter.css"
+				src:["samples/test6.css"],
+				dest:"samples/test6.adapter.css"
 			}*/
-			dist:{
+			/*dist:{
 				files:{
 					"samples/base.adapter.css":["samples/base.css"]
 				}
-			}/**/
-			/*dist:{
-				files:grunt.file.expandMapping(['samples/*.css'], '', {
+			}*/
+			dist:{
+				files:grunt.file.expandMapping(['samples/*.css','!samples/*.adapter.css'], '', {
                     rename: function(base,file) {
                         
                         return file.replace(/\.css/i,'.adapter.css');
                     }
                 })
-			}*/
+			}
         }
     });
     
